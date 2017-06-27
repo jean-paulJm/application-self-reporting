@@ -1,6 +1,8 @@
-#kivy.require('1.9.10') # replace with your current kivy version !
+# kivy.require('1.9.10') # replace with your current kivy version !
 # -*- coding: utf-8 -*-
 from kivy.uix.gridlayout import GridLayout
+import string
+
 from extparams import params
 from tincan import (
     RemoteLRS,
@@ -16,34 +18,37 @@ from tincan import (
 import uuid
 from ressources import lrs_properties
 
-#Builder.load_file('/home/upmc/Documents/kivyproject/main.kv')
+# Builder.load_file('/home/upmc/Documents/kivyproject/main.kv')
 
-#class sendStatements(Widget):
- #   RemoteLRS
+# class sendStatements(Widget):
+#   RemoteLRS
 
 
 from kivy.lang import Builder
 from kivy.app import App
-from kivy.uix.screenmanager import ScreenManager, Screen , SlideTransition
+from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.textinput import TextInput
-from kivy.graphics import Color
+from kivy.network.urlrequest import UrlRequest
+from kivy.uix.spinner import Spinner
 
-#from jnius import autoclass, PythonJavaClass, java_method, cast
+# from jnius import autoclass, PythonJavaClass, java_method, cast
 from kivy.uix.scrollview import ScrollView
+
 try:
     from QRmodule.qr import qrwidget
 except:
     qrwidget = None
 
-
 myparams = params.Extparams()
 myparams.build_from_url()
+#notation=params.RatingScale()
+#notation.__init__(se,type,scale)
 # Test du widget ToggleButton
-#KIVY_DPI=320 KIVY_METRICS_DENSITY=2 python main.py --size 1280x720
+# KIVY_DPI=320 KIVY_METRICS_DENSITY=2 python main.py --size 1280x720
 
 
 
@@ -54,9 +59,26 @@ Builder.load_string('''
         cols:1
         rows:5
          # blue color with 50% alpha
-       
+        BoxLayout:
+            size_hint:('15sp','15sp')
+            Label:
+                id:labid
+                font_size:"15sp"
+                text:""
+            ToggleButton:
+                canvas:
+                    Color:
+                        rgba: 1,0, 0, 0.5 
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                text: 'Déconnexion'
+                font_size: '15sp'
+                on_press:
+                    root.statementsended()
         BoxLayout:
             size_hint:('80sp','80sp')
+            id:boxact
             canvas.before:
                 Color:
                     rgba: 0, 0.5, 1, 0.7 
@@ -76,14 +98,15 @@ Builder.load_string('''
                 id:myspinner
                 text:"Sélection d'activités"
                 # available values
-                values:('','')
-                
+                values:()
                 on_press:root.updateactivities()
+                on_text:root.upgradeactivity()
                 font_size:'20sp'
         BoxLayout:
-            
+            id: blnote
             size_hint:('40sp','40sp')
             Label:
+                id: labnote
                 text: 'Réussite (note sur 20)'
                 font_size:'18sp'
             TextInput:
@@ -96,31 +119,39 @@ Builder.load_string('''
                 
         BoxLayout:  
             orientation: 'horizontal'                      
-            size_hint:('60sp','60sp')
-            #ToggleButton:
-            #    text: 'Valider'
-            #    font_size: '30sp'
-            #    on_press:
-            #        root.checkinput()
-            #        root.upgradeactivity()
-                        
+            size_hint:('40sp','40sp')
   
             ToggleButton:
+                id:actvalidated
                 canvas:
                     Color:
                         rgba: 0,0.5, 0, 0.5 
                     Rectangle:
-            # self here refers to the widget i.e FloatLayout
                         pos: self.pos
                         size: self.size
-                text: 'Page suivante'
+                text: 'Valider'
                 font_size: '30sp'
                 on_press:
                     root.checkinput()
                     root.manager.transition.direction = 'left'
-                    #root.manager.current = 'com'
-                
-
+                    
+                state:"down"
+        # BoxLayout:
+        #     orientation:'horizontal'
+        #     size_hint:('40sp','40sp')
+        # 
+        #     ToggleButton:
+        #         canvas:
+        #             Color:
+        #                 rgba: 1,0, 0, 0.5 
+        #             Rectangle:
+        #                 pos: self.pos
+        #                 size: self.size
+        #         text: 'Déconnexion'
+        #         font_size: '30sp'
+        #         on_press:
+        #             root.statementsended()
+                   
         
                 
         
@@ -150,6 +181,8 @@ Builder.load_string('''
                 font_size: '18sp'
                 
             TextInput:
+                id: textid
+                text:""
                 multiline:False
                 font_size: '20sp'   
                 
@@ -157,11 +190,14 @@ Builder.load_string('''
         BoxLayout:
             size_hint:('50sp','50sp') ## here is another Box
             Label:
+                
                 text: 'Mot de passe'
                 font_size: '18sp'
                 
             TextInput:
+                id: textmdp
                 multiline:False
+                text:""
                 password:True
                 font_size: '20sp'
                 
@@ -178,9 +214,23 @@ Builder.load_string('''
                 text: 'Connexion'
                 font_size: '30sp'
                 on_press:
+                    root.checkidandpw()
+                
+            ToggleButton:
+                canvas:
+                    Color:
+                        rgba: 0.9,0.4,0 , 0.7
+                    Rectangle:
+            # self here refers to the widget i.e FloatLayout
+                        pos: self.pos
+                        size: self.size
+                text: 'Scanner un QR code'
+                
+                font_size: '30sp'
+                on_press:
                     root.manager.current= 'qrscr'
                     root.manager.transition.direction = 'left'
-                    #root.manager.current = 'activity'
+                    
                     
 <QrScreen>:
     fullscreen: True
@@ -212,12 +262,31 @@ Builder.load_string('''
 <Coms>:
     GridLayout:
         cols:1
-        rows:3
+        rows:5
         id:grid
+        BoxLayout:
+            id: barcom
+            size_hint:('15sp','15sp')
+            Label:
+                id:labcomrecap
+                font_size:"15sp"
+                text:""
+            ToggleButton:
+                canvas:
+                    Color:
+                        rgba: 1,0, 0, 0.5 
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                text: 'Déconnexion'
+                font_size: '15sp'
+                on_press:
+                    root.manager.get_screen("activity").statementsended()        
         BoxLayout:
             orientation:'vertical'
             id: changebox
             size_hint:('80sp','80sp')
+            
             canvas.before:
                 Color:
                     rgba: 0, 0.5, 1, 0.7 
@@ -234,22 +303,24 @@ Builder.load_string('''
             id: selecom
             size_hint:('40sp','40sp')
             Spinner:
-                canvas:
-                    Color:
-                        rgba: 0.9,0.1, 0, 0.5 
-                    Rectangle:
+                #canvas:
+                #    Color:
+                #        rgba: 0,0.1, 0, 0.5 
+                #    Rectangle:
             # self here refers to the widget i.e FloatLayout
-                        pos: self.pos
-                        size: self.size
+                #        pos: self.pos
+                #        size: self.size
                 id:myspinner2
                 text:"Sélection de commentaires"
                 # available values
-                values:('Nul','très amusant','Pas assez de temps','....')
+                values:()
                 font_size:'20sp'
+                on_press:root.spinner()
+                
             ToggleButton:
                 canvas:
                     Color:
-                        rgba: 0,0.5, 0, 0.5 
+                        rgba: 0,0.5, 0, 0.5
                     Rectangle:
             # self here refers to the widget i.e FloatLayout
                         pos: self.pos
@@ -258,18 +329,28 @@ Builder.load_string('''
                 
                 text:"Ajouter un commentaire"
                 font_size:'30sp'
-                on_press:root.createinput()
+                on_press:root.boxcom()
                 state:'normal'
             #root.champlibre()
                 
-        #BoxLayout:
-        #    size_hint:('50sp','50sp')
-        #   Label:
-        #        text:"Commentaires libres"
-        #        font_size: '18sp'
-        #    TextInput:
-        #        multiline:False
-        #        font_size: '20sp'   
+        BoxLayout:
+            id: comlib
+            size_hint:('50sp','50sp')
+            ToggleButton:
+                canvas:
+                    Color:
+                        rgba: 1.0,0,0,0.5
+                    Rectangle:
+            # self here refers to the widget i.e FloatLayout
+                        pos: self.pos
+                        size: self.size
+                id:champlibre
+                text:"Ajouter un champ libre"
+                font_size: '18sp'
+                on_press:root.createinput()
+            #TextInput:
+            #    multiline:False
+            #    font_size: '20sp'   
         BoxLayout:
             size_hint: ('60sp','60sp')
             ToggleButton:
@@ -283,21 +364,9 @@ Builder.load_string('''
                         pos: self.pos
                         size: self.size
                 font_size: '30sp'
-                #on_press: root.send_statement()
+                on_press: root.valideco()
                 state:'normal'
-            ToggleButton:
-                id:deco
-                canvas:
-                    Color:
-                        rgba: 0.9,0.1, 0, 0.5 
-                    Rectangle:
-            # self here refers to the widget i.e FloatLayout
-                        pos: self.pos
-                        size: self.size
-                
-                text: 'Déconnexion'
-                font_size: '30sp'
-                on_press:root.valideco()
+            
                     
                   
 <Logout>:
@@ -321,30 +390,32 @@ Builder.load_string('''
             size_hint: ('60sp','60sp')
                     
             ToggleButton:
-                text: 'Retour à la page Activités'
-                font_size: '20sp'
+                canvas:
+                    Color:
+                        rgba: 0.1,0.5, 0, 0.5 
+                    Rectangle:
+            # self here refers to the widget i.e FloatLayout
+                        pos: self.pos
+                        size: self.size
+                text: 'RETOUR'
+                font_size: '30sp'
                 on_press:
                     root.manager.transition.direction = 'right'
                     root.manager.current = 'activity'
                     
-            ToggleButton:
-                text: 'Retour à la page Commentaires'
-                font_size: '20sp'
-                on_press:
-                    root.manager.transition.direction = 'right'
-                    root.manager.current = 'com'
+            
         BoxLayout:
             size_hint:('60sp','60sp')
             ToggleButton:
                 canvas:
                     Color:
-                        rgba: 0.9,0.1, 0, 0.5 
+                        rgba: 1.0,0.1, 0, 0.5 
                     Rectangle:
             # self here refers to the widget i.e FloatLayout
                         pos: self.pos
                         size: self.size
-                text: 'Se déconnecter'
-                font_size: '20sp'
+                text: 'SE DECONNECTER'
+                font_size: '30sp'
                 on_press: 
                     root.manager.transition.direction = 'right'
                     root.manager.current = 'menu'
@@ -374,166 +445,196 @@ Builder.load_string('''
     
                     
 ''')
+
+
 class Myalternativepopup2(BoxLayout):
     pass
+
+
 class Myalternativepopupbox(BoxLayout):
     pass
 
+
 class myscreen(Screen):
-
-
-    def __init__(self,*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(myscreen, self).__init__(*args, **kwargs)
-        self.lrs = RemoteLRS(
-            version=lrs_properties.version,
-            endpoint=lrs_properties.endpoint,
-            username=lrs_properties.username,
-            password=lrs_properties.password,
-        )
+        self.listactivity=[0,0]
+        self.letterspinner = Spinner(id="spin", text="les Notes", values=('A', 'B', 'C', 'D'), font_size='20sp')
+
+
 
     def upgradeactivity(self):
-        i=0
+        i = 0
+        a=1
+        self.letterspinner = Spinner(id="spin", text="les Notes", values=('A', 'B', 'C', 'D'), font_size='20sp')
         for k in myparams.activities.keys():
 
-            if self.ids.myspinner.text in k:
+            if self.ids.myspinner.text==k:
+                #print(myparams.activities.values()[i])
+                if myparams.activities.values()[i].type=="letters":
+                    self.ids.labnote.text = "Réussite (en ABCD)"
+                    self.ids.blnote.remove_widget(self.ids.blnote.children[0])
+                    self.ids.blnote.add_widget(self.letterspinner)
+                    a = 2
+                    #print(myparams.activities.values()[i].scale)
 
-                print(myparams.activities.values()[i].values()[1])
-                print(myparams.activities.values()[i].values()[0])
-                print(self.ids.input.text)
+
+                else:
+
+                    # self.ids.blnote.add_widget(letterspinner)
+
+                    self.ids.blnote.remove_widget(self.ids.blnote.children[0])
+
+                    self.ids.blnote.add_widget(self.ids.input)
+
+                    self.ids.labnote.text = "Réussite (note sur 20)"
+
+                    #print(myparams.activities.values()[i].scale)
+
+                # print(str(myparams.activities.values()[i].values()[0]))
+
+
             i = i + 1
+
+
     def checkinput(self):
-        if self.ids.input.text=="" or int(self.ids.input.text) > 20:
+        if (self.ids.input.text == "" or int(self.ids.input.text) > 20) and (self.ids.blnote.children[0]==self.ids.input):
             self.box = BoxLayout(orientation='vertical')
-            self.box.add_widget(Label(text='Veuillez choisir une note entre 0 et 20!',font_size='20sp'))
-           # size = ('500sp', '150sp')
-            yo=ToggleButton(text='Ok j\'ai compris!',font_size='20sp')
-            #size = ('480sp', '150sp'
-            #box.add_widget(TextInput(text='Hi'))
+            self.box.add_widget(Label(text='Veuillez choisir une note entre 0 et 20!', font_size='20sp'))
+            # size = ('500sp', '150sp')
+            yo = ToggleButton(text='Ok j\'ai compris!', font_size='20sp')
+            # size = ('480sp', '150sp'
+            # box.add_widget(TextInput(text='Hi'))
+            self.a=1
             self.box.add_widget(yo)
-            self.popup = Popup(title='Notation incorrecte!', content=self.box,auto_dismiss=False)
-            yo.bind(on_release  =self.popup.dismiss)
+            self.popup = Popup(title='Notation incorrecte!', content=self.box, auto_dismiss=False)
+            yo.bind(on_release=self.popup.dismiss)
             self.popup.open()
         else:
-            self.upgradeactivity()
-            sm.current="com"
+            if self.ids.blnote.children[0]==self.ids.input and self.ids.myspinner.text in self.ids.myspinner.values:
+                print(self.ids.input.text)
+                print(self.ids.myspinner.text)
+                self.listactivity=[self.ids.myspinner.text,self.ids.input.text]
+                sm.current = "com"
 
 
+                sm.get_screen("com").ids.labcomrecap.text = "Bonjour" + " " + \
+                                                myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"] + \
+                                                "---" + self.ids.myspinner.text + "---" + self.ids.input.text
+                #else:
 
+
+            if self.letterspinner.text in self.letterspinner.values:
+                print(self.letterspinner.text)
+                print(self.ids.myspinner.text)
+                self.listactivity = [self.ids.myspinner.text, self.letterspinner.text]
+                sm.current = "com"
+                sm.get_screen("com").ids.labcomrecap.text = "Bonjour" + " " + \
+                myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"] + "--- " + self.ids.myspinner.text\
+                                                            + "---" + self.letterspinner.text
+
+
+        # a = []
+        # for i in myparams.activities.keys():
+        #     print(type(i))
+        #     b=i.encode('raw_unicode_escape')
+        #     a = a + [b]
+        # print(type(b))
+        # self.ids.myspinner.values = a
+        # print(self.ids.myspinner.values)
     def updateactivities(self):
-        #for k in myparams.activities.iterkeys():
-                #lrs_properties.username= myparams.activities.values()[i].values()[1]
-                #scale=myparams.activities.values()[i].values()[0]
-        self.ids.myspinner.values = myparams.activities.keys()
-        #print(myparams.activities.keys())
-        self.ids.mylabel.text = "Notez l'activité sélectionnée"
-        #if text == '#1':
-         #   self.ids.spinner_2.values = ['A', 'B']
-        #elif text == '#2':
-        #    self.ids.spinner_2.values = ['P', 'Q']
+        #menu=MenuScreen()
+        #self.add_widget(menu)
+        # if sm.get_screen("com").ids.myspinner2.text=="Sélection de commentaires":
+        #     self.ids.labid.text="Bonjour"+" "+myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]+" "+"Pas de commentaires"
+        # else:
+        #     self.ids.labid.text = "Bonjour"+" "+myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]+" "+sm.get_screen("com").ids.myspinner2.text
+
+        #if name.text==self.ids.boxact.children[0].text:
+        #    pass
+
         #else:
-        #    self.ids.spinner_2.values = ['Y', 'Z']
-    #def deleteactivity(self):
-    #    self.ids.lab2.text=self.ids.lab2.text.replace(list[len(list)+1] , " ")
-    def send_statement(self):
+        #    self.ids.boxact.add_widget(name)
+        self.ids.mylabel.text = "Notez l'activité sélectionnée"
+        self.ids.myspinner.values = myparams.activities.keys()
+    def statementsended(self):
 
-        actor = Agent(
-            name='UserMan_test_2',
-            mbox='mailto:tincanpython@tincanapi.com',
-        )
-        verb = Verb(
-            id='http://adlnet.gov/expapi/verbs/experienced',
-            display=LanguageMap({'en-US': 'experienced'}),
-        )
-        object = Activity(
-            id='http://tincanapi.com/TinCanPython/Example/0',
-            definition=ActivityDefinition(
-            name=LanguageMap({'en-US': 'TinCanPython Library'}),
-            description=LanguageMap({'en-US': 'Use of, or interaction with, the TinCanPython Library'}),
-            ),
-        )
-        context = Context(
-            registration=uuid.uuid4(),
-            instructor=Agent(
-                name='Lord TinCan',
-                mbox='mailto:lordtincan@tincanapi.com',
-            ),
-            # language='en-US',
-        )
-        statement = Statement(
-            actor=actor,
-            verb=verb,
-            object=object,
-            context=context,
-        )
-        #self.ids.mylabel.text="Notez l'activité sélectionnée"
-
-        #self.ids.myspinner.text="Les activités"
-        #self.ids.myspinner.values = myparams.activities.keys()
-
-        #list+=[self.ids.myspinner.text +' : '+self.ids.input.text + "\n"]
-        #self.ids.lab2.text+=self.ids.myspinner.text +' : '+self.ids.input.text + "\n"
-        response = self.lrs.save_statement(statement)
-        if not response:
-            raise ValueError("statement failed to save")
-
-        state_document = StateDocument(
-            activity=object,
-            agent=actor,
-            id='stateDoc',
-            content=bytearray('stateDocValue', encoding='utf-8'),
-        )
-        response = self.lrs.save_state(state_document)
-
-        if not response.success:
-            raise ValueError("could not save state document")
+        if sm.get_screen("com").a!=[2]:
+            self.box = BoxLayout(orientation='vertical')
+            self.box.add_widget(
+                Label(text='Rien n\'a été enregistré,vous allez vous déconnecter sans rien valider', font_size='20sp'))
+            # size = ('500sp', '150sp')
+            returndeco = ToggleButton(text='Ok, je suis prévenu', font_size='20sp')
+            #nextpage = ToggleButton(text='Confirmer la validation', font_size='20sp')
+            # size = ('480sp', '150sp'
+            # box.add_widget(TextInput(text='Hi'))
+            self.box.add_widget(returndeco)
+            #self.box.add_widget(nextpage)
+            self.popup = Popup(title='Pas d\'enregistrement de vos saisies', content=self.box, auto_dismiss=False)
+            returndeco.bind(on_release=self.popup.dismiss)
+            #nextpage.bind(on_release=lambda x: self.confirmcom(state))
+            self.popup.open()
+            sm.transition.direction = 'left'
+            sm.current = 'deconnexion'
+        else:
+            sm.transition.direction = 'left'
+            sm.current = 'deconnexion'
 
 class QrScreen(Screen):
-    def __init__(self,*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(QrScreen, self).__init__(*args, **kwargs)
 
-        if qrwidget==None:
+        if qrwidget == None:
             mypop = Myalternativepopupbox()
             self.add_widget(mypop)
             print(self.ids.bl.ids)
             but = mypop.ids.return_button
             but.bind(on_release=self.returnmenu)
+
         else:
             self.add_widget(qrwidget)
+
 
             # etape 1 : recup widget ZbarQrcodeDetector (probablement qrwidget.ids.detevtot
             # etape 2 :  widgetdetector.bind(on_symbols=self.printsymbols)
 
     def create_popup2(self):
-        self.add_widget(qrwidget)
+        # self.add_widget(qrwidget)
         mypop2 = Myalternativepopup2()
 
         self.add_widget(mypop2)
         bt2 = mypop2.ids.return_button2
 
         bt2.bind(on_release=self.printsymbols)
-
-        self.remove_widget(qrwidget)
+        box = BoxLayout(orientation='vertical')
+        box.add_widget(Label(text=str(qrwidget.ids.detector.symbols[0].data), font_size='20sp'))
+        self.add_widget(box)
+        # self.remove_widget(qrwidget)
 
     def returnmenu(self, data):
-        print("xe tets")
+        # print("xe tets")
+        sm.current = "menu"
+        sm.transition.direction = "right"
 
-        sm.current="menu"
-        sm.transition.direction="right"
-    def printsymbols(self,data):
-        #print(data)
-        #self.add_widget(qrwidget)
-        #self.testbox = BoxLayout(orientation='vertical')
-        #self.testbox.add_widget(Label(text="symbole détecté", font_size='40sp'))
-        sm.current="menu"
-        sm.transition.direction="right"
+        App._running_app.qr_detected("https://api.myjson.com/bins/gu4bz")
 
-        #self.add_widget(qrwidget)
-        #self.testbox = BoxLayout(orientation='vertical')
-        #self.testbox.add_widget(Label(text='Veuillez choisir une note entre 0 et 20!', font_size='40sp'))
-        #qrwidget.add_widget(self.testbox)
+    def printsymbols(self, data):
+        # print(data)
+        # self.add_widget(qrwidget)
+        # self.testbox = BoxLayout(orientation='vertical')
+        # self.testbox.add_widget(Label(text="symbole détecté", font_size='40sp'))
+        sm.current = "menu"
+        sm.transition.direction = "right"
+        # self.add_widget(qrwidget)
+        # self.testbox = BoxLayout(orientation='vertical')
+        # self.testbox.add_widget(Label(text='Veuillez choisir une note entre 0 et 20!', font_size='40sp'))
+        # qrwidget.add_widget(self.testbox)
         print ("ok")
+        # self.add_widget(qrwidget)
+
+
 class MenuScreen(Screen):
-    def __init__(self,*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(MenuScreen, self).__init__(*args, **kwargs)
         self.lrs = RemoteLRS(
             version=lrs_properties.version,
@@ -542,145 +643,159 @@ class MenuScreen(Screen):
             password=lrs_properties.password,
         )
 
-
-        #def __init__(self,*args, **kwargs):
+    def checkidandpw(self):
+        print (self.ids.textmdp.text)
+        print(myparams.__dict__)
+        if self.ids.textid.text in myparams.accounts.keys() and self.ids.textmdp.text==myparams.accounts[self.ids.textid.text]["mdp"]:
+            sm.transition.direction = 'left'
+            sm.current = 'activity'
+            sm.get_screen("activity").ids.labid.text="Bonjour"+ "  "+myparams.accounts[self.ids.textid.text]["name"]
+            #ok=myscreen()
+            #ok.ids.myspinner.values=myparams.activities.keys()
+            #print(ok.ids.myspinner.values)
+        else:
+            self.box = BoxLayout(orientation='vertical')
+            self.box.add_widget(Label(text='Veuillez  d\' abord scanner un qr code', font_size='20sp'))
+            # size = ('500sp', '150sp')
+            yo = ToggleButton(text='Retour au menu de connexion', font_size='20sp')
+            # size = ('480sp', '150sp'
+            # box.add_widget(TextInput(text='Hi'))
+            self.box.add_widget(yo)
+            self.popup = Popup(title='Identifiant ou mot de passe incorrect', content=self.box, auto_dismiss=False)
+            yo.bind(on_release=self.popup.dismiss)
+            self.popup.open()
+            print(myparams.activities.keys())
+        # def __init__(self,*args, **kwargs):
         #   super(MenuScreen, self).__init__(*args,**kwargs)
-        #def identif(self):
+        # def identif(self):
         #   self.manager.transition = SlideTransition(direction="left")
         #   self.ids['login'].text = ""
         #   self.ids['password'].text = ""
+
+
 class Coms(Screen):
-    def __init__(self,*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(Coms, self).__init__(*args, **kwargs)
-        self.lrs = RemoteLRS(
-            version=lrs_properties.version,
-            endpoint=lrs_properties.endpoint,
-            username=lrs_properties.username,
-            password=lrs_properties.password,
-        )
-
-    #def champlibre(self):
-        #self.box2 = BoxLayout(orientation='vertical')
-     #   champ = ToggleButton(text='Ajouter un commentaire', font_size='20sp')
-        # size = ('480sp', '150sp'
-        # box.add_widget(TextInput(text='Hi'))
-        #self.box2.add_widget(champ)
-        #if self.ids..on_press==root.champlibre():
-        #    print(ok)
+        self.a=[]
+        self.listecom=[]
+        self.textinput = TextInput(text=" ", multiline=True, font_size='20sp')
+        #if sm.get_screen("activity").ids.blnote.children[0]==sm.get_screen("activity").ids.input:
+        #    self.ids.labrecapcom.text="Bonjour"+" "+myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]+" "+sm.get_screen("activity").ids.myspinner.text+sm.get_screen("activity").ids.input.text
         #else:
-        #    self.ids.selecom.add_widget(champ)
-    def deletecom(self,textinput):
-
-        textinput.text=""
+        #    self.ids.labrecapcom.text = "Bonjour" + " " + myparams.accounts[sm.get_screen("menu").ids.textid.text][
+        #        "name"] + " "+sm.get_screen("activity").ids.myspinner.text + sm.get_screen("activity").letterspinner.text
 
 
 
+    def deletebox(self,blhoriz):
+        self.ids.changebox.remove_widget(blhoriz)
+        if self.ids.changebox.children==[]:         #add the initial title if there is no horizontal boxlayout
+            self.ids.changebox.add_widget(self.ids.labcom)
+
+
+    def boxcom(self):
+        #Grid=GridLayout(rows=None,cols=2)
+        blhoriz=BoxLayout(orientation="horizontal")
+        #blcom = BoxLayout(hint_size_y=None)
+        #blerase = BoxLayout(hint_size_y=None)
+        if self.ids.labcom in  self.ids.changebox.children:
+            self.ids.changebox.remove_widget(self.ids.labcom)
+        self.Selectcom = Label(text=self.ids.myspinner2.text, font_size='18sp')
+        Erasecom=ToggleButton(text='Supprimer ce commentaire', font_size='20sp')
+        Erasecom.bind(on_press=lambda x: self.deletebox(blhoriz))
+        blhoriz.add_widget(self.Selectcom)
+        blhoriz.add_widget(Erasecom)
+        self.ids.changebox.add_widget(blhoriz)
+        #Grid.add_widget(blcom)
+        #Grid.add_widget(blerase)
+    def spinner(self):
+        self.ids.myspinner2.values=myparams.commentaries
+
+        # if sm.get_screen("activity").ids.blnote.children[0] == sm.get_screen("activity").ids.input:
+        #     self.ids.labcomrecap.text="Bonjour"+" "+myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]+\
+        #                             "---"+sm.get_screen("activity").ids.myspinner.text+"---"+sm.get_screen("activity").ids.input.text
+        # else:
+        #     self.ids.labcomrecap.text = "Bonjour"+" "+myparams.accounts[sm.get_screen("menu").ids.textid.text][
+        #         "name"]+"--- "+sm.get_screen("activity").ids.myspinner.text+"---"+sm.get_screen("activity").letterspinner.text
+
+
+
+    def deletecom(self, textinput,erase):
+
+        textinput.text = " "
+        self.ids.comlib.remove_widget(textinput)
+        self.ids.comlib.remove_widget(erase)
+        self.ids.comlib.add_widget(self.ids.champlibre)
 
     def createinput(self):
-        #root = ScrollView(bar_pos_y="right", bar_width="10sp", bar_margin="1sp", scroll_type=["bars"])
 
-        textinput = TextInput(text='', multiline=True, font_size='20sp')
-        text=self.ids.labcom
-        erase = ToggleButton(text='Supprimer ce commentaire', font_size='20sp')
-        erase.bind(on_press=lambda x: self.deletecom(textinput))
-        self.ids.valid.bind(on_press=lambda x:self.retake(textinput))
-        box=BoxLayout()
-        Grid=GridLayout(cols=2,rows=None,size_hint_y='80sp')
-        if self.ids.addcom.state=='down':
-            self.ids.changebox.remove_widget(text)
 
-         #   root.add_widget(Grid)
-        #Grid.add_widget(box)
-        #box.add_widget(Grid)
-        self.ids.changebox.add_widget(Grid)
-        Grid.add_widget(box)
-        box.add_widget(textinput)
-        box.add_widget(erase)
-        #Grid.add_widget(erase)
-        self.ids.addcom.state='down'
+        self.ids.comlib.remove_widget(self.ids.champlibre)
+        self.ids.comlib.add_widget(self.textinput)
+        erase = ToggleButton(text='Supprimer ce champ libre', font_size='20sp')
 
-        #root.add_widget(erase)
-        #textinput.add_widget(s)
-    def retake(self,textinput):
-        self.ids.valid.state='down'
+        erase.bind(on_press=lambda x: self.deletecom(self.textinput,erase))
+        self.ids.comlib.add_widget(erase)
 
-        print (textinput.text)
 
     def valideco(self):
-
-        if self.ids.valid.state == 'down' and self.ids.myspinner2.text in self.ids.myspinner2.values:
-            print(self.ids.myspinner2.text)
-            sm.transition.direction = 'left'
-            sm.current = 'deconnexion'
+        state=Autostatement()
+        self.listecom=[]
+        for box in self.ids.changebox.children:
+            try:
+                if box.children[1].text in self.listecom:
+                    pass
+                else:
+                    self.listecom.append(box.children[1].text)
+            except:
+                pass
+        if self.ids.myspinner2.text in self.listecom:
+            pass
         else:
-            self.box2 = BoxLayout(orientation='vertical')
-            self.box2.add_widget(Label(text='Veuillez validez avant de vous déconnecter', font_size='20sp'))
+            self.listecom.append(self.ids.myspinner2.text)
+        com=Coms()
+        print (self.textinput.text)
+        if self.listecom==["Sélection de commentaires"]:
+            del self.listecom[0]
+            self.box = BoxLayout(orientation='vertical')
+            self.box.add_widget(
+                Label(text='Valider sans laisser de commentaires?', font_size='20sp'))
             # size = ('500sp', '150sp')
-            yo = ToggleButton(text='Ok j\'ai compris!', font_size='20sp')
+            returncom = ToggleButton(text='Retour à la page Commentaires', font_size='20sp')
+            nextpage = ToggleButton(text='Confirmer la validation', font_size='20sp')
             # size = ('480sp', '150sp'
             # box.add_widget(TextInput(text='Hi'))
-            self.box2.add_widget(yo)
-            self.popup = Popup(title='Non validation de vos commentaires', content=self.box2, auto_dismiss=False)
-            yo.bind(on_release=self.popup.dismiss)
-
+            self.box.add_widget(returncom)
+            self.box.add_widget(nextpage)
+            self.popup = Popup(title='Aucun commentaire saisi', content=self.box, auto_dismiss=False)
+            returncom.bind(on_release=self.popup.dismiss)
+            nextpage.bind(on_release=lambda x:self.confirmcom(state,com))
             self.popup.open()
-        self.ids.valid.state = "normal"
+        else:
+            sm.current="activity"
+            sm.transition.direction="right"
+            state.send_statement()
+            self.a=[2]
+            sm.get_screen("activity").ids.labid.text = "Bonjour"+" "+\
+                                                           myparams.accounts[sm.get_screen("menu").ids.textid.text][
+                                                               "name"]+"---"+str(self.listecom)
+        print(self.listecom)
+
+    def confirmcom(self,state,com):
+        self.popup.dismiss()
+        #state.send_activity()
+        #state.send_identity()
+        sm.current = "activity"
+        sm.transition.direction = "right"
+        state.send_statement()
+        self.a=[2]
+        sm.get_screen("activity").ids.labid.text="Bonjour"+" "+myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]\
+                                                 +" "+"Pas de commentaires"
 
 
-    def send_statement(self):
-
-        actor = Agent(
-            name='UserMan_test_2',
-            mbox='mailto:tincanpython@tincanapi.com',
-        )
-        verb = Verb(
-            id='http://adlnet.gov/expapi/verbs/experienced',
-            display=LanguageMap({'en-US': 'experienced'}),
-        )
-        object = Activity(
-            id='http://tincanapi.com/TinCanPython/Example/0',
-            definition=ActivityDefinition(
-                name=LanguageMap({'en-US': 'TinCanPython Library'}),
-                description=LanguageMap({'en-US': 'Use of, or interaction with, the TinCanPython Library'}),
-            ),
-        )
-        context = Context(
-            registration=uuid.uuid4(),
-            instructor=Agent(
-                name='Lord TinCan',
-                mbox='mailto:lordtincan@tincanapi.com',
-            ),
-            # language='en-US',
-        )
-        statement = Statement(
-            actor=actor,
-            verb=verb,
-            object=object,
-            context=context,
-        )
-
-
-        # self.ids.mylabel.text="Notez l'activité sélectionnée"
-
-        # self.ids.myspinner.text="Les activités"
-        # self.ids.myspinner.values = myparams.activities.keys()
-        #self.ids.lab2.text = myparams.activities.keys()[1]
-        response = self.lrs.save_statement(statement)
-        if not response:
-            raise ValueError("statement failed to save")
-
-        state_document = StateDocument(
-            activity=object,
-            agent=actor,
-            id='stateDoc',
-            content=bytearray('stateDocValue', encoding='utf-8'),
-        )
-        response = self.lrs.save_state(state_document)
-
-        if not response.success:
-            raise ValueError("could not save state document")
 class Logout(Screen):
-        pass
+    pass
+
 
 sm = ScreenManager(transition=SlideTransition())
 sm.add_widget(MenuScreen(name='menu'))
@@ -688,21 +803,88 @@ sm.add_widget(myscreen(name='activity'))
 sm.add_widget(Coms(name='com'))
 sm.add_widget(Logout(name='deconnexion'))
 sm.add_widget(QrScreen(name='qrscr'))
+
+class Autostatement():
+    def __init__(self, *args, **kwargs):
+       # super(Autostatement, self).__init__(*args, **kwargs)
+        self.actor_name = None
+        #self.actor_mbox= None
+        self.activity_name=None
+        self.activity_note=None
+
+        self.lrs = RemoteLRS(
+            version=lrs_properties.version,
+            endpoint=lrs_properties.endpoint,
+            username=lrs_properties.username,
+            password=lrs_properties.password,
+        )
+    # def send_identity(self):
+    #     menu=MenuScreen()
+    #     self.actor_name=menu.ids.textid.text
+    #     #self.actor_mbox='mailto: namefirstname@tincanapi.com'
+    #     #self.lrs.password=menu.ids.textmdp.text
+    #     self.send_statement()
+    # def send_activity(self):
+    #     actscreen=myscreen()
+    #     self.activity_name=actscreen.listactivity[0]
+    #     self.activity_note=actscreen.listactivity[1]
+    #     self.send_statement()
+
+    def send_statement(self):
+
+        actor = Agent(
+            name=self.actor_name ,
+            mbox='mailto: tincanpython@tincanapi.com',
+        )
+        verb = Verb(
+            id='http://adlnet.gov/expapi/verbs/experienced',
+            display=LanguageMap({'fr-FR': 'experimenté'}),
+        )
+        object = Activity(
+            id='http://tincanapi.com/TinCanPython/Example/0',
+            definition=ActivityDefinition(
+                name=LanguageMap({'fr-FR': 'ok ca marche'}),
+                description=LanguageMap({'en-US': 'Use of, or interaction with, the TinCanPython Library'}),
+                #= self.activity_note,
+            ),
+        )
+        statement = Statement(
+            actor=actor,
+            verb=verb,
+            object=object,
+        )
+        #print(object.definition.name)
+        # self.ids.mylabel.text="Notez l'activité sélectionnée"
+
+        # self.ids.myspinner.text="Les activités"
+        # self.ids.myspinner.values = myparams.activities.keys()
+        # self.ids.lab2.text = myparams.activities.keys()[1]
+        response = self.lrs.save_statement(statement)
+        if not response:
+
+            raise ValueError("statement failed to save")
+
+
 class MonAppli(App):
-    #qrscreen = None
+    # qrscreen = None
+
     def build(self):
-
         return sm
-
-    def qr_detected(self):
-        #qrscreen=QrScreen()
-        #qrscreen.create_popup2(MonAppli.s)
-        #self.qrscreen.get_screen("qrscr").create_popup2()
+    def qr_det(self):
+        #sm.get_screen("qrscr").remove_widget(qrwidget)
         sm.get_screen("qrscr").create_popup2()
-        #sm.current="menu"
-        #sm.transition.direction="right"
+
+    def qr_detected(self, url):
+        myparams.build_from_url2(url)
+        #self.qr_detected("https://api.myjson.com/bins/gu4bz")
+        # self.add_widget(box)
+
+        # self.req = UrlRequest(qrwidget.ids.detector.Qrcode.data, studentsdata)
 
 
+        # sm.current="menu"
+        # sm.transition.direction="right"
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     MonAppli().run()
