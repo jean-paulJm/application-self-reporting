@@ -465,17 +465,17 @@ class myscreen(Screen):
 
     def upgradeactivity(self):
         i = 0
-        a=1
-        self.letterspinner = Spinner(id="spin", text="les Notes", values=('A', 'B', 'C', 'D'), font_size='20sp')
+
+        self.letterspinner = Spinner(text="les Notes", values=('A', 'B', 'C', 'D'), font_size='20sp')
         for k in myparams.activities.keys():
 
-            if 'u''+self.ids.myspinner.text==k:
+            if self.ids.myspinner.text==k.encode("utf-8"):
                 #print(myparams.activities.values()[i])
                 if myparams.activities.values()[i].type == u'letters':
                     self.ids.labnote.text = "Réussite (en ABCD)"
                     self.ids.blnote.remove_widget(self.ids.blnote.children[0])
                     self.ids.blnote.add_widget(self.letterspinner)
-                    a = 2
+
                     #print(myparams.activities.values()[i].scale)
 
 
@@ -516,11 +516,15 @@ class myscreen(Screen):
                 print(self.ids.myspinner.text)
                 self.listactivity=[self.ids.myspinner.text,self.ids.input.text]
                 sm.current = "com"
+                print(type(myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]))
+                print(type(self.ids.myspinner.text))
+                print(type(self.ids.input.text))
+
 
 
                 sm.get_screen("com").ids.labcomrecap.text = "Bonjour" + " " + \
-                                                myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"] + \
-                                                "---" + self.ids.myspinner.text + "---" + self.ids.input.text
+                                                myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"].encode("utf-8") + \
+                                                "---" + self.ids.myspinner.text + "---" + self.ids.input.text.encode("utf-8")
                 #else:
 
 
@@ -528,9 +532,12 @@ class myscreen(Screen):
                 print(self.letterspinner.text)
                 print(self.ids.myspinner.text)
                 self.listactivity = [self.ids.myspinner.text, self.letterspinner.text]
+                print(type(myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]))
+                print(type(self.ids.myspinner.text))
+                print(type(self.letterspinner.text))
                 sm.current = "com"
                 sm.get_screen("com").ids.labcomrecap.text = "Bonjour" + " " + \
-                myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"] + "--- " + self.ids.myspinner.text\
+                myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"].encode("utf-8") + "--- " + self.ids.myspinner.text\
                                                             + "---" + self.letterspinner.text
 
 
@@ -556,7 +563,7 @@ class myscreen(Screen):
         #else:
         #    self.ids.boxact.add_widget(name)
         self.ids.mylabel.text = "Notez l'activité sélectionnée"
-        self.ids.myspinner.values = myparams.activities.keys()
+        self.ids.myspinner.values = [v.encode("utf-8") for v in myparams.activities.keys()]
     def statementsended(self):
 
         if sm.get_screen("com").a!=[2]:
@@ -778,7 +785,7 @@ class Coms(Screen):
             self.a=[2]
             sm.get_screen("activity").ids.labid.text = "Bonjour"+" "+\
                                                            myparams.accounts[sm.get_screen("menu").ids.textid.text][
-                                                               "name"]+"---"+str(self.listecom)
+                                                               "name"].encode("utf-8")+"---"+str(self.listecom)
         print(self.listecom)
 
     def confirmcom(self,state,com):
@@ -789,7 +796,8 @@ class Coms(Screen):
         sm.transition.direction = "right"
         state.send_statement()
         self.a=[2]
-        sm.get_screen("activity").ids.labid.text="Bonjour"+" "+myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]\
+        sm.get_screen("activity").ids.labid.text="Bonjour"+" "\
+                                                 +myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"].encode("utf-8")\
                                                  +" "+"Pas de commentaires"
 
 
