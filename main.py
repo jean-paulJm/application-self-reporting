@@ -469,9 +469,9 @@ class myscreen(Screen):
         self.letterspinner = Spinner(id="spin", text="les Notes", values=('A', 'B', 'C', 'D'), font_size='20sp')
         for k in myparams.activities.keys():
 
-            if self.ids.myspinner.text==k:
+            if 'u''+self.ids.myspinner.text==k:
                 #print(myparams.activities.values()[i])
-                if myparams.activities.values()[i].type=="letters":
+                if myparams.activities.values()[i].type == u'letters':
                     self.ids.labnote.text = "Réussite (en ABCD)"
                     self.ids.blnote.remove_widget(self.ids.blnote.children[0])
                     self.ids.blnote.add_widget(self.letterspinner)
@@ -871,9 +871,11 @@ class MonAppli(App):
     def build(self):
         return sm
     def qr_det(self):
-        #sm.get_screen("qrscr").remove_widget(qrwidget)
-        sm.get_screen("qrscr").create_popup2()
 
+        #sm.get_screen("qrscr").create_popup2()
+        #sm.get_screen("qrscr").remove_widget(qrwidget)
+        sm.current="menu"
+        sm.transition.direction="right"
     def qr_detected(self, url):
         myparams.build_from_url2(url)
         #self.qr_detected("https://api.myjson.com/bins/gu4bz")

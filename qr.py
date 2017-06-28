@@ -28,7 +28,7 @@ from kivy.graphics import Color, Line
 from jnius import autoclass, PythonJavaClass, java_method, cast
 from android.runnable import run_on_ui_thread
 from kivy.app import App
-from main import sm
+from __main__ import sm
 
 # preload java classes
 System = autoclass('java.lang.System')
@@ -225,7 +225,7 @@ class ZbarQrcodeDetector(AnchorLayout):
     '''Widget that use the AndroidCamera and zbar to detect qrcode.
     When found, the `symbols` will be updated
     '''
-    camera_size = ListProperty(["100sp", "100sp"])
+    camera_size = ListProperty([320,240])
 
     symbols = ListProperty([])
     symbolselected=BooleanProperty(False)
@@ -249,7 +249,6 @@ class ZbarQrcodeDetector(AnchorLayout):
         self._scanner.setConfig(Symbol.QRCODE, Config.ENABLE, 1)
         self._scanner.setConfig(0, Config.X_DENSITY, 3)
         self._scanner.setConfig(0, Config.Y_DENSITY, 3)
-        self._camera.start()
 
     def start(self):
         self._camera.start()
@@ -293,9 +292,9 @@ class ZbarQrcodeDetector(AnchorLayout):
         App._running_app.qr_det()
         App._running_app.qr_detected(str(self.symbols[0].data))
         #App.call
-    def changemenu(self):
-        sm.get_screen("menu")
-        sm.transition.direction="right"
+    #def changemenu(self):
+    #    sm.get_screen("menu")
+    #    sm.transition.direction="right"
 
     '''
     # can't work, due to the overlay.
@@ -335,14 +334,14 @@ BoxLayout:
         size_hint_y: None
         height: '48dp'
 
-        #Button:
-        #    text: 'Scan a qrcode'
-        #    on_release: detector.start()
+        Button:
+            text: 'Scan a qrcode'
+            on_release: detector.start()
         Button:
             
             text: 'Retour menu de connexion'
             on_release: detector.stop()
-                        detector.changemenu()
+                        #detector.changemenu()
 '''
 
     #class QrcodeExample(App):
