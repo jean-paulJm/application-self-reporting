@@ -458,7 +458,7 @@ class Myalternativepopupbox(BoxLayout):
 class myscreen(Screen):
     def __init__(self, *args, **kwargs):
         super(myscreen, self).__init__(*args, **kwargs)
-        self.listactivity=[0,0]
+        #self.listactivity=[0,0]
         self.letterspinner = Spinner(id="spin", text="les Notes", values=('A', 'B', 'C', 'D'), font_size='20sp')
 
 
@@ -513,7 +513,7 @@ class myscreen(Screen):
         else:
             if self.ids.blnote.children[0]==self.ids.input and self.ids.myspinner.text in self.ids.myspinner.values:
                 print(self.ids.input.text)
-                print(self.ids.myspinner.text)
+                #print(self.ids.myspinner.text)
                 self.listactivity=[self.ids.myspinner.text,self.ids.input.text]
                 sm.current = "com"
                 print(type(myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]))
@@ -522,15 +522,16 @@ class myscreen(Screen):
 
 
 
-                sm.get_screen("com").ids.labcomrecap.text = "Bonjour" + " " + \
+                sm.get_screen("com").ids.labcomrecap.text = "Bonjour"\
+                                                            + " " + \
                                                 myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"].encode("utf-8") + \
                                                 "---" + self.ids.myspinner.text + "---" + self.ids.input.text.encode("utf-8")
-                #else:
+
 
 
             if self.letterspinner.text in self.letterspinner.values:
                 print(self.letterspinner.text)
-                print(self.ids.myspinner.text)
+                #print(self.ids.myspinner.text)
                 self.listactivity = [self.ids.myspinner.text, self.letterspinner.text]
                 print(type(myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]))
                 print(type(self.ids.myspinner.text))
@@ -538,7 +539,7 @@ class myscreen(Screen):
                 sm.current = "com"
                 sm.get_screen("com").ids.labcomrecap.text = "Bonjour" + " " + \
                 myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"].encode("utf-8") + "--- " + self.ids.myspinner.text\
-                                                            + "---" + self.letterspinner.text
+                                                           + "---" + self.letterspinner.text
 
 
         # a = []
@@ -655,7 +656,7 @@ class MenuScreen(Screen):
         print(myparams.__dict__)
         if self.ids.textid.text in myparams.accounts.keys() and self.ids.textmdp.text==myparams.accounts[self.ids.textid.text]["mdp"]:
             sm.transition.direction = 'left'
-            sm.current = 'activity'
+            sm.current = 'com'
             sm.get_screen("activity").ids.labid.text="Bonjour"+ "  "+myparams.accounts[self.ids.textid.text]["name"]
             #ok=myscreen()
             #ok.ids.myspinner.values=myparams.activities.keys()
@@ -716,7 +717,7 @@ class Coms(Screen):
         #Grid.add_widget(blcom)
         #Grid.add_widget(blerase)
     def spinner(self):
-        self.ids.myspinner2.values=myparams.commentaries
+        self.ids.myspinner2.values=[v.encode("utf-8") for v in myparams.commentaries]
 
         # if sm.get_screen("activity").ids.blnote.children[0] == sm.get_screen("activity").ids.input:
         #     self.ids.labcomrecap.text="Bonjour"+" "+myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]+\
@@ -880,8 +881,8 @@ class MonAppli(App):
         return sm
     def qr_det(self):
 
-        #sm.get_screen("qrscr").create_popup2()
-        #sm.get_screen("qrscr").remove_widget(qrwidget)
+        sm.get_screen("qrscr").create_popup2()
+        sm.get_screen("qrscr").remove_widget(qrwidget)
         sm.current="menu"
         sm.transition.direction="right"
     def qr_detected(self, url):
