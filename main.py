@@ -34,7 +34,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.textinput import TextInput
 from kivy.network.urlrequest import UrlRequest
 from kivy.uix.spinner import Spinner
-
+import os.path
 # from jnius import autoclass, PythonJavaClass, java_method, cast
 from kivy.uix.scrollview import ScrollView
 
@@ -49,7 +49,6 @@ myparams.build_from_url()
 #notation.__init__(se,type,scale)
 # Test du widget ToggleButton
 # KIVY_DPI=320 KIVY_METRICS_DENSITY=2 python main.py --size 1280x720
-
 
 
 Builder.load_string('''
@@ -174,6 +173,7 @@ Builder.load_string('''
                 text: "Bienvenue!"
                 
                 font_size:'50sp'
+       
         BoxLayout:## here is one Box
             size_hint:('50sp','50sp')   
             Label:
@@ -189,6 +189,13 @@ Builder.load_string('''
         
         BoxLayout:
             size_hint:('50sp','50sp') ## here is another Box
+            canvas.before:
+                Color:
+                    rgba: 1, 0.,0. ,0.5 
+                Rectangle:
+            # self here refers to the widget i.e FloatLayout
+                    pos: self.pos
+                    size: self.size
             Label:
                 
                 text: 'Mot de passe'
@@ -216,20 +223,21 @@ Builder.load_string('''
                 on_press:
                     root.checkidandpw()
                 
+         
             ToggleButton:
+                id:buturl
                 canvas:
                     Color:
                         rgba: 0.9,0.4,0 , 0.7
                     Rectangle:
-            # self here refers to the widget i.e FloatLayout
+            #self here refers to the widget i.e FloatLayout
                         pos: self.pos
                         size: self.size
-                text: 'Scanner un QR code'
-                
+                text: ''
+                 
                 font_size: '30sp'
                 on_press:
-                    root.manager.current= 'qrscr'
-                    root.manager.transition.direction = 'left'
+                    root.popupverif()
                     
                     
 <QrScreen>:
@@ -239,15 +247,46 @@ Builder.load_string('''
         id: bl
                      
 <Myalternativepopupbox>:
-    #popup: popup.__self__
-    BoxLayout:
-        id: bl
-        Popup:
-            id: popup
-            title : ""
-            Button:
-                text : "revenir à l'écran de connexion"
-                id: return_button
+    GridLayout:
+        rows:2
+        cols:1
+        BoxLayout:
+            size_hint:('40sp','40sp')
+            id: bl
+            Label:
+                text: "Ecrivez un lien url valide"
+                font_size: '25sp'
+        BoxLayout:## here is one Box
+            size_hint:('25sp','25sp')
+            canvas.before:
+                Color:
+                    rgba: 1, 0.,0. ,0.5 
+                Rectangle:
+            # self here refers to the widget i.e FloatLayout
+                    pos: self.pos
+                    size: self.size
+            #Label:
+            #    text: 'Lien URL'
+            #    font_size: '18sp'
+                
+            TextInput:
+                id: texturl
+                text:""
+                multiline:False
+                font_size: '18sp'
+            ToggleButton:
+                canvas:
+                    Color:
+                        rgba: 0,0.5, 0, 0.5 
+                    Rectangle:
+            # self here refers to the widget i.e FloatLayout
+                        pos: self.pos
+                        size: self.size
+                text: 'Connexion'
+                font_size: '30sp'
+                on_press:
+                    root.checkurl()
+            
 <Myalternativepopup2>:
     #popup: popup.__self__
     BoxLayout:
@@ -441,8 +480,7 @@ Builder.load_string('''
             
             
             #bout.bind(on_release=popup.dismiss)
-            #root.Popup.open()
-    
+            #root.Popup.open()    
                     
 ''')
 
@@ -451,8 +489,34 @@ class Myalternativepopup2(BoxLayout):
     pass
 
 
-class Myalternativepopupbox(BoxLayout):
-    pass
+class Myalternativepopupbox(Screen):
+    def checkurl(self):
+        if self.ids.texturl.text=="https://api.myjson.com/bins/gu4bz":
+            App._running_app.qr_detected("https://api.myjson.com/bins/gu4bz")
+            sm.current = "menu"
+            sm.transition.direction = "right"
+        else:
+            self.boxlab=BoxLayout(orientation="vertical")
+            self.popup1 = Popup(title='ERREUR Url', content=self.boxlab, auto_dismiss=False)
+            self.yo1 = ToggleButton(text='Retour au menu de connexion', font_size='20sp')
+            self.yo2 = ToggleButton(text='Renouveler l\'essai', font_size='20sp')
+
+            self.boxlab.add_widget(Label(text='Url incorrect', font_size='20sp'))
+            self.boxlab.add_widget(self.yo1)
+            self.boxlab.add_widget(self.yo2)
+            self.yo1.bind(on_release=self.returnmenuscreen)
+            self.yo2.bind(on_release=self.popup1.dismiss)
+            self.popup1.open()
+    def returnmenuscreen(self,hjk):
+        sm.current = "menu"
+        sm.transition.direction = "right"
+        self.popup1.dismiss()
+    # # self.box.add_widget(Label(text='Veuillez  d\' abord scanner un qr code', font_size='20sp'))
+    # sm.get_screen("menu").box.add_widget(sm.get_screen("menu").yo)
+    #
+    # sm.get_screen("menu").yo.bind(on_release=sm.get_screen("menu").popup.dismiss)
+    #
+    # sm.get_screen("menu").popup.open()
 
 
 class myscreen(Screen):
@@ -596,12 +660,15 @@ class QrScreen(Screen):
             mypop = Myalternativepopupbox()
             self.add_widget(mypop)
             print(self.ids.bl.ids)
-            but = mypop.ids.return_button
-            but.bind(on_release=self.returnmenu)
+            self.url="Entrez un url"
+            #print(menu.ids.buturl.text)
+            #but = mypop.ids.return_button
+            #but.bind(on_release=self.returnmenu)
+
 
         else:
             self.add_widget(qrwidget)
-
+            self.url="Scanner un QR code"
 
             # etape 1 : recup widget ZbarQrcodeDetector (probablement qrwidget.ids.detevtot
             # etape 2 :  widgetdetector.bind(on_symbols=self.printsymbols)
@@ -619,12 +686,6 @@ class QrScreen(Screen):
         self.add_widget(box)
         # self.remove_widget(qrwidget)
 
-    def returnmenu(self, data):
-        # print("xe tets")
-        sm.current = "menu"
-        sm.transition.direction = "right"
-
-        App._running_app.qr_detected("https://api.myjson.com/bins/gu4bz")
 
     def printsymbols(self, data):
         # print(data)
@@ -633,6 +694,7 @@ class QrScreen(Screen):
         # self.testbox.add_widget(Label(text="symbole détecté", font_size='40sp'))
         sm.current = "menu"
         sm.transition.direction = "right"
+        #self.remove_widget(mypop2)
         # self.add_widget(qrwidget)
         # self.testbox = BoxLayout(orientation='vertical')
         # self.testbox.add_widget(Label(text='Veuillez choisir une note entre 0 et 20!', font_size='40sp'))
@@ -649,30 +711,58 @@ class MenuScreen(Screen):
             endpoint=lrs_properties.endpoint,
             username=lrs_properties.username,
             password=lrs_properties.password,
-        )
 
+        )
+        if qrwidget==None:
+            self.ids.buturl.text="Entrez un url"
+        else:
+            self.ids.buturl.text = "Scannez un qr code"
     def checkidandpw(self):
         print (self.ids.textmdp.text)
         print(myparams.__dict__)
-        if self.ids.textid.text in myparams.accounts.keys() and self.ids.textmdp.text==myparams.accounts[self.ids.textid.text]["mdp"]:
+        self.box = BoxLayout(orientation='vertical')
+        self.popup = Popup(title='Identifiant ou mot de passe incorrect', content=self.box, auto_dismiss=False)
+        self.yo = ToggleButton(text='Retour au menu de connexion', font_size='20sp')
+
+        if self.ids.textid.text in myparams.accounts.keys() and self.ids.textmdp.text == \
+                myparams.accounts[self.ids.textid.text]["mdp"]:
             sm.transition.direction = 'left'
             sm.current = 'com'
-            sm.get_screen("activity").ids.labid.text="Bonjour"+ "  "+myparams.accounts[self.ids.textid.text]["name"]
-            #ok=myscreen()
-            #ok.ids.myspinner.values=myparams.activities.keys()
-            #print(ok.ids.myspinner.values)
+            sm.get_screen("activity").ids.labid.text = "Bonjour" + "  " + myparams.accounts[self.ids.textid.text][
+                "name"]
         else:
-            self.box = BoxLayout(orientation='vertical')
-            self.box.add_widget(Label(text='Veuillez  d\' abord scanner un qr code', font_size='20sp'))
-            # size = ('500sp', '150sp')
-            yo = ToggleButton(text='Retour au menu de connexion', font_size='20sp')
-            # size = ('480sp', '150sp'
-            # box.add_widget(TextInput(text='Hi'))
-            self.box.add_widget(yo)
-            self.popup = Popup(title='Identifiant ou mot de passe incorrect', content=self.box, auto_dismiss=False)
-            yo.bind(on_release=self.popup.dismiss)
+
+            self.box.add_widget(Label(text='Erreur dans la saisie de l\'identifiant ou mot de passe', font_size='20sp'))
+            self.box.add_widget(self.yo)
+
+            self.yo.bind(on_release=self.popup.dismiss)
             self.popup.open()
             print(myparams.activities.keys())
+
+    def popupverif(self):
+        if os.path.exists("mydata.data"):
+            self.b = BoxLayout(orientation='vertical')
+            self.pop = Popup(title='Un QR code est déjà enregistré', content=self.b, auto_dismiss=False)
+            self.yo = ToggleButton(text='Retour au menu de connexion', font_size='20sp')
+            if qrwidget==None:
+                self.yo1=ToggleButton(text='Je veux enregistrer un lien url', font_size='20sp')
+            else:
+                self.yo1 = ToggleButton(text='Je veux scanner un QR code', font_size='20sp')
+            self.b.add_widget(
+                    Label(text='Un QR code déjà enregistré, êtes vous sûr d\'en enregistrer un nouveau?', font_size='20sp'))
+            self.b.add_widget(self.yo)
+            self.b.add_widget(self.yo1)
+            self.yo.bind(on_release=self.pop.dismiss)
+            self.yo1.bind(on_release=self.gotoqrscr)
+            self.pop.open()
+        else:
+            sm.current = "qrscr"
+            sm.transition.direction = "left"
+    def gotoqrscr(self,t):
+        sm.current="qrscr"
+        sm.transition.direction="left"
+        self.pop.dismiss()
+
         # def __init__(self,*args, **kwargs):
         #   super(MenuScreen, self).__init__(*args,**kwargs)
         # def identif(self):
@@ -762,7 +852,7 @@ class Coms(Screen):
         else:
             self.listecom.append(self.ids.myspinner2.text)
         com=Coms()
-        print (self.textinput.text)
+        #print (self.textinput.text)
         if self.listecom==["Sélection de commentaires"]:
             del self.listecom[0]
             self.box = BoxLayout(orientation='vertical')
@@ -787,7 +877,7 @@ class Coms(Screen):
             sm.get_screen("activity").ids.labid.text = "Bonjour"+" "+\
                                                            myparams.accounts[sm.get_screen("menu").ids.textid.text][
                                                                "name"].encode("utf-8")+"---"+str(self.listecom)
-        print(self.listecom)
+        #print(self.listecom)
 
     def confirmcom(self,state,com):
         self.popup.dismiss()
@@ -807,11 +897,24 @@ class Logout(Screen):
 
 
 sm = ScreenManager(transition=SlideTransition())
-sm.add_widget(MenuScreen(name='menu'))
-sm.add_widget(myscreen(name='activity'))
-sm.add_widget(Coms(name='com'))
-sm.add_widget(Logout(name='deconnexion'))
-sm.add_widget(QrScreen(name='qrscr'))
+
+
+if os.path.exists("mydata.data"):
+    sm.add_widget(MenuScreen(name='menu'))
+    sm.add_widget(QrScreen(name='qrscr'))
+    sm.add_widget(myscreen(name='activity'))
+    sm.add_widget(Coms(name='com'))
+    sm.add_widget(Logout(name='deconnexion'))
+
+else:
+
+    sm.add_widget(QrScreen(name='qrscr'))
+    sm.add_widget(MenuScreen(name='menu'))
+    sm.add_widget(myscreen(name='activity'))
+    sm.add_widget(Coms(name='com'))
+    sm.add_widget(Logout(name='deconnexion'))
+
+
 
 class Autostatement():
     def __init__(self, *args, **kwargs):
@@ -883,18 +986,20 @@ class MonAppli(App):
 
         sm.get_screen("qrscr").create_popup2()
         sm.get_screen("qrscr").remove_widget(qrwidget)
-        sm.current="menu"
-        sm.transition.direction="right"
+        sm.get_screen("qrscr").remove_widget(mypop2)
+
+        #sm.current="menu"
+        #sm.transition.direction="right"
     def qr_detected(self, url):
         myparams.build_from_url2(url)
-        #self.qr_detected("https://api.myjson.com/bins/gu4bz")
-        # self.add_widget(box)
-
-        # self.req = UrlRequest(qrwidget.ids.detector.Qrcode.data, studentsdata)
-
-
-        # sm.current="menu"
-        # sm.transition.direction="right"
+    #def check(self):
+    #    if sm.get_screen("menu").ids.textid.text in myparams.accounts.keys()and sm.get_screen("menu").ids.textmdp.text==myparams.accounts[sm.get_screen("menu").ids.textid.text]["mdp"] :
+    #        sm.transition.direction = 'left'
+    #        sm.current = 'com'
+    #        sm.get_screen("activity").ids.labid.text="Bonjour"+ "  "+myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]
+    #        print("il faut passer")
+    #    else:
+    #       print("bizarre")
 
 
 if __name__ == "__main__":

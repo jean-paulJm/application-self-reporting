@@ -4,7 +4,13 @@ Created on 13 juin 2017
 @author: Bruno
 '''
 from kivy.network.urlrequest import UrlRequest
-#from main import QrScreen
+
+
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 
 
@@ -25,7 +31,12 @@ class Extparams():
         self.accounts = {}
         self.activities = {}
         self.commentaries=[]
-        pass
+        try:
+             results = pickle.load(open("mydata.data", "rb"))
+             self.datas(req=None, result=results)
+        except:
+             pass
+
 
 
     def build_from_url2(self,url):
@@ -51,7 +62,7 @@ class Extparams():
 
         self.students = Student() #todo
     def datas(self,req,result):
-        #print (result)
+        pickle.dump(result, open("mydata.data", "wb"))
         student_dict = result["STUDENTS"]
         for stu in student_dict:
             key = stu["login"]
@@ -68,7 +79,7 @@ class Extparams():
         for com in commentary_list:
             self.commentaries.append(com)
         print (self.commentaries)
-
+        #App._running_app.check()
 
         #for values in result:
         #    print (values)
