@@ -511,6 +511,7 @@ class Myalternativepopupbox(Screen):
         sm.current = "menu"
         sm.transition.direction = "right"
         self.popup1.dismiss()
+
     # # self.box.add_widget(Label(text='Veuillez  d\' abord scanner un qr code', font_size='20sp'))
     # sm.get_screen("menu").box.add_widget(sm.get_screen("menu").yo)
     #
@@ -562,20 +563,26 @@ class myscreen(Screen):
 
 
     def checkinput(self):
-        if (self.ids.input.text == "" or int(self.ids.input.text) > 20) and (self.ids.blnote.children[0]==self.ids.input):
+        if (self.ids.input.text == "" or int(self.ids.input.text) > 20) and (self.ids.blnote.children[0]==self.ids.input)\
+                and self.ids.myspinner.text in self.ids.myspinner.values:
             self.box = BoxLayout(orientation='vertical')
             self.box.add_widget(Label(text='Veuillez choisir une note entre 0 et 20!', font_size='20sp'))
             # size = ('500sp', '150sp')
             yo = ToggleButton(text='Ok j\'ai compris!', font_size='20sp')
+            nextpage=ToggleButton(text='Ne pas noter cette activité', font_size='20sp')
             # size = ('480sp', '150sp'
             # box.add_widget(TextInput(text='Hi'))
             self.a=1
             self.box.add_widget(yo)
+            self.box.add_widget(nextpage)
             self.popup = Popup(title='Notation incorrecte!', content=self.box, auto_dismiss=False)
             yo.bind(on_release=self.popup.dismiss)
+            nextpage.bind(on_release=self.comm)
             self.popup.open()
-        else:
-            if self.ids.blnote.children[0]==self.ids.input and self.ids.myspinner.text in self.ids.myspinner.values:
+
+        elif self.ids.myspinner.text in self.ids.myspinner.values:
+
+            if self.ids.blnote.children[0]==self.ids.input:
                 print(self.ids.input.text)
                 #print(self.ids.myspinner.text)
                 self.listactivity=[self.ids.myspinner.text,self.ids.input.text]
@@ -593,7 +600,7 @@ class myscreen(Screen):
 
 
 
-            if self.letterspinner.text in self.letterspinner.values:
+            elif self.letterspinner.text in self.letterspinner.values:
                 print(self.letterspinner.text)
                 #print(self.ids.myspinner.text)
                 self.listactivity = [self.ids.myspinner.text, self.letterspinner.text]
@@ -604,7 +611,30 @@ class myscreen(Screen):
                 sm.get_screen("com").ids.labcomrecap.text = "Bonjour" + " " + \
                 myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"].encode("utf-8") + "--- " + self.ids.myspinner.text\
                                                            + "---" + self.letterspinner.text
+            else:
+                self.box3 = BoxLayout(orientation='vertical')
+                self.box3.add_widget(Label(text='Vous allez validez sans noter votre activité', font_size='20sp'))
+                # size = ('500sp', '150sp')
+                returnact = ToggleButton(text='Retour aux activités', font_size='20sp')
+                nextpage2 = ToggleButton(text='Ne pas noter cette activité', font_size='20sp')
+                # size = ('480sp', '150sp'
+                # box.add_widget(TextInput(text='Hi
+                self.box3.add_widget(returnact)
+                self.box3.add_widget(nextpage2)
+                self.popup = Popup(title='Activité sans notation!', content=self.box3, auto_dismiss=False)
+                returnact.bind(on_release=self.popup.dismiss)
+                nextpage2.bind(on_release=self.comm)
+                self.popup.open()
 
+    def comm(self,g):
+        sm.current="com"
+        sm.transition.direction="left"
+        self.popup.dismiss()
+        sm.get_screen("com").ids.labcomrecap.text = "Bonjour" \
+                                                    + " " + \
+                                                    myparams.accounts[sm.get_screen("menu").ids.textid.text][
+                                                        "name"].encode("utf-8") + \
+                                                    "---" + self.ids.myspinner.text + "---non notée"
 
         # a = []
         # for i in myparams.activities.keys():
@@ -615,18 +645,7 @@ class myscreen(Screen):
         # self.ids.myspinner.values = a
         # print(self.ids.myspinner.values)
     def updateactivities(self):
-        #menu=MenuScreen()
-        #self.add_widget(menu)
-        # if sm.get_screen("com").ids.myspinner2.text=="Sélection de commentaires":
-        #     self.ids.labid.text="Bonjour"+" "+myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]+" "+"Pas de commentaires"
-        # else:
-        #     self.ids.labid.text = "Bonjour"+" "+myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"]+" "+sm.get_screen("com").ids.myspinner2.text
 
-        #if name.text==self.ids.boxact.children[0].text:
-        #    pass
-
-        #else:
-        #    self.ids.boxact.add_widget(name)
         self.ids.mylabel.text = "Notez l'activité sélectionnée"
         self.ids.myspinner.values = [v.encode("utf-8") for v in myparams.activities.keys()]
     def statementsended(self):
@@ -653,6 +672,8 @@ class myscreen(Screen):
             sm.current = 'deconnexion'
 
 class QrScreen(Screen):
+
+
     def __init__(self, *args, **kwargs):
         super(QrScreen, self).__init__(*args, **kwargs)
 
@@ -660,46 +681,56 @@ class QrScreen(Screen):
             mypop = Myalternativepopupbox()
             self.add_widget(mypop)
             print(self.ids.bl.ids)
-            self.url="Entrez un url"
+
+
             #print(menu.ids.buturl.text)
             #but = mypop.ids.return_button
             #but.bind(on_release=self.returnmenu)
 
 
         else:
-            self.add_widget(qrwidget)
-            self.url="Scanner un QR code"
+            if os.path.exists("mydata.data"):
+                self.add_widget(qrwidget)
+            else:
+                qrwidget.ids.detector.start()
+                self.add_widget(qrwidget)
+
+
+
 
             # etape 1 : recup widget ZbarQrcodeDetector (probablement qrwidget.ids.detevtot
             # etape 2 :  widgetdetector.bind(on_symbols=self.printsymbols)
 
     def create_popup2(self):
         # self.add_widget(qrwidget)
-        mypop2 = Myalternativepopup2()
 
-        self.add_widget(mypop2)
-        bt2 = mypop2.ids.return_button2
+        self.mypop2 = Myalternativepopup2()
+        self.box = BoxLayout(orientation='vertical')
+        self.add_widget(self.mypop2)
+        bt2 = self.mypop2.ids.return_button2
 
         bt2.bind(on_release=self.printsymbols)
-        box = BoxLayout(orientation='vertical')
-        box.add_widget(Label(text=str(qrwidget.ids.detector.symbols[0].data), font_size='20sp'))
-        self.add_widget(box)
+
+        #self.box.add_widget(Label(text=str(qrwidget.ids.detector.symbols[0].data), font_size='20sp'))
+        self.add_widget(self.box)
         # self.remove_widget(qrwidget)
 
 
-    def printsymbols(self, data):
-        # print(data)
-        # self.add_widget(qrwidget)
+    def printsymbols(self,data):
+
         # self.testbox = BoxLayout(orientation='vertical')
         # self.testbox.add_widget(Label(text="symbole détecté", font_size='40sp'))
         sm.current = "menu"
         sm.transition.direction = "right"
-        #self.remove_widget(mypop2)
+
+        self.remove_widget(self.mypop2)
+        # self.box.remove_widget(Label(text=str(qrwidget.ids.detector.symbols[0].data), font_size='20sp'))
+
+        self.remove_widget(self.box)
         # self.add_widget(qrwidget)
-        # self.testbox = BoxLayout(orientation='vertical')
-        # self.testbox.add_widget(Label(text='Veuillez choisir une note entre 0 et 20!', font_size='40sp'))
-        # qrwidget.add_widget(self.testbox)
+
         print ("ok")
+
         # self.add_widget(qrwidget)
 
 
@@ -713,10 +744,13 @@ class MenuScreen(Screen):
             password=lrs_properties.password,
 
         )
+
         if qrwidget==None:
             self.ids.buturl.text="Entrez un url"
         else:
             self.ids.buturl.text = "Scannez un qr code"
+
+
     def checkidandpw(self):
         print (self.ids.textmdp.text)
         print(myparams.__dict__)
@@ -727,7 +761,7 @@ class MenuScreen(Screen):
         if self.ids.textid.text in myparams.accounts.keys() and self.ids.textmdp.text == \
                 myparams.accounts[self.ids.textid.text]["mdp"]:
             sm.transition.direction = 'left'
-            sm.current = 'com'
+            sm.current = 'activity'
             sm.get_screen("activity").ids.labid.text = "Bonjour" + "  " + myparams.accounts[self.ids.textid.text][
                 "name"]
         else:
@@ -756,11 +790,21 @@ class MenuScreen(Screen):
             self.yo1.bind(on_release=self.gotoqrscr)
             self.pop.open()
         else:
+            if qrwidget == None:
+                sm.current="qrscr"
+                sm.transition.direction="left"
+            else:
+                sm.current = "qrscr"
+                sm.transition.direction = "left"
+                qrwidget.ids.detector.start()
+    def gotoqrscr(self,t):
+        if qrwidget == None:
             sm.current = "qrscr"
             sm.transition.direction = "left"
-    def gotoqrscr(self,t):
-        sm.current="qrscr"
-        sm.transition.direction="left"
+        else:
+            sm.current = "qrscr"
+            sm.transition.direction = "left"
+            qrwidget.ids.detector.start()
         self.pop.dismiss()
 
         # def __init__(self,*args, **kwargs):
@@ -889,7 +933,7 @@ class Coms(Screen):
         self.a=[2]
         sm.get_screen("activity").ids.labid.text="Bonjour"+" "\
                                                  +myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"].encode("utf-8")\
-                                                 +" "+"Pas de commentaires"
+                                                 +" "+"---Pas de commentaires"
 
 
 class Logout(Screen):
@@ -985,11 +1029,15 @@ class MonAppli(App):
     def qr_det(self):
 
         sm.get_screen("qrscr").create_popup2()
-        sm.get_screen("qrscr").remove_widget(qrwidget)
-        sm.get_screen("qrscr").remove_widget(mypop2)
+        qrwidget.ids.detector.stop()
 
-        #sm.current="menu"
-        #sm.transition.direction="right"
+        #sm.get_screen("qrscr").remove_widget(qrwidget)
+
+    def menureturn(self):
+        sm.current="menu"
+        sm.transition.direction="right"
+        qrwidget.ids.detector.stop()
+        #sm.get_screen("qrscr").remove_widget(qrwidget)
     def qr_detected(self, url):
         myparams.build_from_url2(url)
     #def check(self):
