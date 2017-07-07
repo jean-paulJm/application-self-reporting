@@ -142,6 +142,7 @@ Builder.load_string('''
         cols: 1
         rows: 4
         BoxLayout:
+            #size: (self.width,self.height)
             size_hint:('80sp','80sp')   
             canvas.before:
                 Color:
@@ -432,18 +433,22 @@ Builder.load_string('''
               
 ''')
 
-
+# Popup which confirms a QR Code Scan
 class Myalternativepopup2(BoxLayout):
     pass
 
-
+#Screen that appears when the scan of a qr code is impossible
 class Myalternativepopupbox(Screen):
+    #check if the url entered corresponds to right url
     def checkurl(self):
         if self.ids.texturl.text=="https://api.myjson.com/bins/1aob0f":
+
+            #making the url request by using the function qr_detected
             App._running_app.qr_detected("https://api.myjson.com/bins/1aob0f")
             sm.current = "menu"
             sm.transition.direction = "right"
         else:
+            #Popup which shows an error when the url is wrong
             self.boxlab=BoxLayout(orientation="vertical")
             self.popup1 = Popup(title='ERREUR Url', content=self.boxlab, auto_dismiss=False)
             self.yo1 = ToggleButton(text='Retour au menu de connexion', font_size='20sp')
@@ -455,41 +460,47 @@ class Myalternativepopupbox(Screen):
             self.yo1.bind(on_release=self.returnmenuscreen)
             self.yo2.bind(on_release=self.popup1.dismiss)
             self.popup1.open()
+    #return to the menu screen if the url is correct
     def returnmenuscreen(self,hjk):
         sm.current = "menu"
         sm.transition.direction = "right"
         self.popup1.dismiss()
 
 
-
+#Activity screen
 class myscreen(Screen):
     def __init__(self, *args, **kwargs):
         super(myscreen, self).__init__(*args, **kwargs)
-
+        #initializing the spinner widget used for letters
         self.letterspinner = Spinner(id="spin", text="les Notes", values=(), font_size='20sp')
         self.ids.labnote.text="Réussite"
 
-
+    #function called when the text spinner of the activities is modified
     def upgradeactivity(self):
         i = 0
 
-
+        #research of the correct activity in the dictionary named activities in params.py
         for k in myparams.activities.keys():
 
             if self.ids.myspinner.text==k.encode("utf-8"):
-
+                #case of a grade in letters
                 if myparams.activities.values()[i]["rate"].type == u'letters':
                     self.ids.labnote.text = "Réussite (notation "+\
                                             str(ascii_uppercase[0:myparams.activities.values()[i]["rate"].scale]) + ")"
                     self.ids.blnote.remove_widget(self.ids.blnote.children[0])
+                    #activate the letter spinner
                     self.ids.blnote.add_widget(self.letterspinner)
+
+                    #self.rate is the number of letter chosen by the user: if rate=4, there are 4 letters
                     self.rate=myparams.activities.values()[i]["rate"].scale
+
+                    #values of the letters made by the list ascii_uppercase
                     self.letterspinner.values=ascii_uppercase[0:myparams.activities.values()[i]["rate"].scale]
                     self.descr=myparams.activities.values()[i]["description"]
 
                 else:
 
-
+                    #case of a grade in notes
 
                     self.ids.blnote.remove_widget(self.ids.blnote.children[0])
 
@@ -504,10 +515,11 @@ class myscreen(Screen):
 
             i = i + 1
 
-
+    #function called when we press the button "valider"
     def checkinput(self):
         if self.ids.myspinner.text=="Sélection d'activités":
             self.rate=0
+        #case of a note going across the maximum rate
         if (self.ids.input.text == "" or int(self.ids.input.text) > self.rate) and (self.ids.blnote.children[0]==self.ids.input)\
                 and self.ids.myspinner.text in self.ids.myspinner.values:
             self.box = BoxLayout(orientation='vertical')
@@ -525,7 +537,7 @@ class myscreen(Screen):
             self.popup.open()
 
         elif self.ids.myspinner.text in self.ids.myspinner.values:
-
+            #case of a note entered correctly
             if self.ids.blnote.children[0]==self.ids.input:
 
                 self.listactivity=[self.ids.myspinner.text,self.ids.input.text]
@@ -536,7 +548,7 @@ class myscreen(Screen):
                     "---" + self.ids.myspinner.text + "---" + self.ids.input.text.encode("utf-8")
 
 
-
+            #case of a note in letters entered correctly
             elif self.letterspinner.text in self.letterspinner.values:
                 print(self.letterspinner.text)
 
@@ -547,7 +559,8 @@ class myscreen(Screen):
                 sm.current = "com"
                 sm.get_screen("com").ids.labcomrecap.text = "Bonjour" + " " + \
                 myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"].encode("utf-8") + "--- " + self.ids.myspinner.text\
-                                                           + "---" + self.letterspinner.text
+                                                         + "---" + self.letterspinner.text
+                #case when no activity note is given
             else:
                 self.box3 = BoxLayout(orientation='vertical')
                 self.box3.add_widget(Label(text='Vous allez validez sans noter votre activité', font_size='20sp'))
@@ -561,11 +574,13 @@ class myscreen(Screen):
                 returnact.bind(on_release=self.popup.dismiss)
                 nextpage2.bind(on_release=self.comm)
                 self.popup.open()
+        #convert the letter graduation into a fraction by 1
         p=len(self.letterspinner.values)
         for a in self.letterspinner.values:
             if self.letterspinner.text == a:
                 self.grade = float(p) / float(len(self.letterspinner.values))
             p=p-1
+    #called when we want to skip to next page whithout entering a note
     def comm(self,g):
         sm.current="com"
         sm.transition.direction="left"
@@ -576,13 +591,16 @@ class myscreen(Screen):
                                                         "name"].encode("utf-8") + \
                                                     "---" + self.ids.myspinner.text + "---non notée"
 
-
+    #function called when the activity spinner is pressed
     def updateactivities(self):
 
         self.ids.mylabel.text = "Notez l'activité sélectionnée"
         self.ids.myspinner.values = [v.encode("utf-8") for v in myparams.activities.keys()]
-    def statementsended(self):
 
+
+    #function called when we press the sign out button
+    def statementsended(self):
+        #popup appears if we don't validate at the commentaries page
         if sm.get_screen("com").a!=[2]:
             self.box = BoxLayout(orientation='vertical')
             self.box.add_widget(
@@ -600,12 +618,14 @@ class myscreen(Screen):
             sm.transition.direction = 'left'
             sm.current = 'deconnexion'
 
+
+#class making the QR scan process
 class QrScreen(Screen):
 
 
     def __init__(self, *args, **kwargs):
         super(QrScreen, self).__init__(*args, **kwargs)
-
+        #case when we can't scan a QR code
         if qrwidget == None:
             mypop = Myalternativepopupbox()
             self.add_widget(mypop)
@@ -613,6 +633,7 @@ class QrScreen(Screen):
 
 
         else:
+            #no need to launch the camera if the file exists,already done
             if os.path.exists("mydata.data"):
                 self.add_widget(qrwidget)
 
@@ -625,7 +646,7 @@ class QrScreen(Screen):
 
             # etape 1 : recup widget ZbarQrcodeDetector (probablement qrwidget.ids.detevtot
             # etape 2 :  widgetdetector.bind(on_symbols=self.printsymbols)
-
+    #called when a QR code is detected, popup is released
     def create_popup2(self):
 
         self.mypop2 = Myalternativepopup2()
@@ -639,7 +660,7 @@ class QrScreen(Screen):
         self.add_widget(self.box)
 
 
-
+    #the app is going to menuscreen if a QR code is detected
     def printsymbols(self,data):
 
         sm.current = "menu"
@@ -653,20 +674,19 @@ class QrScreen(Screen):
 
 
 
-        # self.add_widget(qrwidget)
 
-
+# Menu screen, sign in menu
 class MenuScreen(Screen):
     def __init__(self, *args, **kwargs):
         super(MenuScreen, self).__init__(*args, **kwargs)
 
-
+        #modifying text we can't scan a QR code
         if qrwidget==None:
             self.ids.buturl.text="Entrez un url"
         else:
             self.ids.buturl.text = "Scannez un qr code"
 
-
+    #check if id and password are correct and correspond to our elements in the dic called accounts in params.py
     def checkidandpw(self):
         print (self.ids.textmdp.text)
         print(myparams.__dict__)
@@ -687,8 +707,8 @@ class MenuScreen(Screen):
 
             self.yo.bind(on_release=self.popup.dismiss)
             self.popup.open()
-            print(myparams.activities.keys())
 
+    #verify if a QR is already scanned and registered
     def popupverif(self):
         if os.path.exists("mydata.data"):
             self.b = BoxLayout(orientation='vertical')
@@ -713,6 +733,8 @@ class MenuScreen(Screen):
                 sm.current = "qrscr"
                 sm.transition.direction = "left"
                 qrwidget.ids.detector.start()
+
+    #function called when we want to scan an other QR code
     def gotoqrscr(self,t):
         if qrwidget == None:
             sm.current = "qrscr"
@@ -726,22 +748,24 @@ class MenuScreen(Screen):
 
 
 
-
+#Screen of commentaries
 class Coms(Screen):
     def __init__(self, *args, **kwargs):
         super(Coms, self).__init__(*args, **kwargs)
+        #initializing listecom, list which will contain all the coms
         self.a=[]
         self.listecom=[]
+        #textinput of the freecoms
         self.textinput = TextInput(text=" ", multiline=True, font_size='20sp')
 
 
-
+    #case when we want to delete the box appeared when adding a com
     def deletebox(self,blhoriz):
         self.ids.changebox.remove_widget(blhoriz)
         if self.ids.changebox.children==[]:         #add the initial title if there is no horizontal boxlayout
             self.ids.changebox.add_widget(self.ids.labcom)
 
-
+    #create a new box in the top of the screen, containing a spinner com
     def boxcom(self):
 
         blhoriz=BoxLayout(orientation="horizontal")
@@ -755,11 +779,11 @@ class Coms(Screen):
         blhoriz.add_widget(Erasecom)
         self.ids.changebox.add_widget(blhoriz)
 
-
+    #function called when the com spinner is pressed
     def spinner(self):
         self.ids.myspinner2.values=[v.encode("utf-8") for v in myparams.commentaries]
 
-
+    #create a new box in the top of the screen, containing a free com written in the textinput
     def inputcom(self):
         blhoriz2 = BoxLayout(orientation="horizontal")
 
@@ -772,6 +796,8 @@ class Coms(Screen):
         blhoriz2.add_widget(Erasecom)
         self.ids.changebox.add_widget(blhoriz2)
         self.textinput.text=" "
+
+    #replace boxes to add the textinput for freecoms
     def createinput(self):
 
 
@@ -782,7 +808,7 @@ class Coms(Screen):
         addcominput.bind(on_press=lambda x: self.inputcom())
         self.ids.comlib.add_widget(addcominput)
 
-
+    #function called when the button "valider" is pressed, statements are sended
     def valideco(self):
         state=Autostatement()
         self.listecom=[]
@@ -802,12 +828,15 @@ class Coms(Screen):
         if self.textinput.text!=" ":
             self.listecom.append(self.textinput.text.encode("utf-8"))
 
+        #initializing popup when a validation is made succesfully
         self.bvalid = BoxLayout(orientation="vertical")
         self.returnact = ToggleButton(text='Retour', font_size='20sp')
         self.pops = Popup(title='Bravo, vos données ont bien été envoyées', content=self.bvalid, auto_dismiss=False)
         self.returnact.bind(on_release=self.validate)
+
         if self.listecom[0]==["Sélection de commentaires"]:
             del self.listecom[0]
+
         if self.listecom==["Sélection de commentaires"]:
             del self.listecom[0]
             self.box = BoxLayout(orientation='vertical')
@@ -824,7 +853,19 @@ class Coms(Screen):
             nextpage.bind(on_release=lambda x:self.confirmcom(state))
             self.popup.open()
         else:
-            state.send_statement()
+            try:
+                state.send_statement()
+            except:
+                #case when the statements are not send due to a default of connexion
+                self.boxerr = BoxLayout(orientation="vertical")
+                self.errpop = Popup(title='ERREUR Url', content=self.boxlab, auto_dismiss=False)
+                self.returntocom = ToggleButton(text='Retour à la page commentaires', font_size='20sp')
+                self.boxerr.add_widget\
+                    (Label(text='Veuillez vous connecter à un réseau sans fil avant de lancer l\'application', font_size='20sp'))
+                self.boxerr.add_widget(self.returntocom)
+
+                self.returntocom.bind(on_release=self.errpop.dismiss)
+                self.errpop.open()
             self.a=[2]
 
             self.bvalid.add_widget(self.returnact)
@@ -834,32 +875,49 @@ class Coms(Screen):
             sm.get_screen("activity").ids.labid.text = "Bonjour"+" "+\
                                                            myparams.accounts[sm.get_screen("menu").ids.textid.text][
                                                             "name"].encode("utf-8")+"---"+str(self.listecom)
-
+    #return to activity if the validation is a success
     def validate(self,uyf):
         self.pops.dismiss()
 
         sm.current = "activity"
         sm.transition.direction = "right"
 
+    #case when there is no coms entered, popup released
     def confirmcom(self,state):
         self.popup.dismiss()
         self.bvalid.add_widget(self.returnact)
         self.pops.open()
+        try:
+            state.send_statement()
+        except:
+            # case when the statements are not sent due to a default of connexion
+            self.boxerr = BoxLayout(orientation="vertical")
+            self.errpop = Popup(title='ERREUR Url', content=self.boxlab, auto_dismiss=False)
+            self.returntocom = ToggleButton(text='Retour à la page commentaires', font_size='20sp')
+            self.boxerr.add_widget \
+                (Label(text='Veuillez vous connecter à un réseau sans fil avant de lancer l\'application',
+                       font_size='20sp'))
+            self.boxerr.add_widget(self.returntocom)
+
+            self.returntocom.bind(on_release=self.errpop.dismiss)
+            self.errpop.open()
+
+
         self.listecom = ["No commentaries"]
-        state.send_statement()
+
         self.a=[2]
         sm.get_screen("activity").ids.labid.text="Bonjour"+" "\
                                                  +myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"].encode("utf-8")\
                                                  +" "+"---Pas de commentaires"
 
-
+#log out screen
 class Logout(Screen):
     pass
 
-
+#screen widget
 sm = ScreenManager(transition=SlideTransition())
 
-
+#the first screen is different if the url or qr code is registered or not
 if os.path.exists("mydata.data"):
     sm.add_widget(MenuScreen(name='menu'))
     sm.add_widget(QrScreen(name='qrscr'))
@@ -876,29 +934,30 @@ else:
     sm.add_widget(Logout(name='deconnexion'))
 
 
-
+#class sending the statements to an endpoint written in our dictionary in params.py
 class Autostatement():
     def __init__(self):
         self.actor_name = myparams.accounts[sm.get_screen("menu").ids.textid.text]["name"].encode("utf-8")
         self.activity_name=sm.get_screen("activity").ids.myspinner.text
+        #case when the graduation is a correct note
         if (sm.get_screen("activity").ids.blnote.children[0]==sm.get_screen("activity").ids.input)\
                 and sm.get_screen("activity").ids.input.text.encode("utf-8")!="" \
                 and int(sm.get_screen("activity").ids.input.text.encode("utf-8"))<sm.get_screen("activity").rate:
             self.activity_note=sm.get_screen("activity").ids.input.text.encode("utf-8")
             self.ratescale = sm.get_screen("activity").rate
             self.min=0
-
+        #case of a grade in letters
         elif sm.get_screen("activity").letterspinner.text in sm.get_screen("activity").letterspinner.values:
             self.activity_note=sm.get_screen("activity").grade
             self.ratescale=1
             self.min=0.25
-
+        #otherwise no notes
         else:
             self.activity_note=None
             self.ratescale=None
             self.min=None
 
-
+        #reaffect the lrs properties in self.lrs
         lrs_properties.endpoint=myparams.lrsdict.values()[0]["endpoint"]
 
         lrs_properties.password=myparams.lrsdict.values()[0]["password"]
@@ -911,7 +970,7 @@ class Autostatement():
             password=lrs_properties.password,
         )
 
-
+    #function which send a statement containing actor, verb ,object,result
     def send_statement(self):
 
         actor = Agent(
@@ -933,11 +992,12 @@ class Autostatement():
         )
         dico={}
         comment=""
+        #list containing all the coms registered by the user
         self.comlist = sm.get_screen("com").listecom
         for com in self.comlist:
             comment+=com
 
-
+        #determine if there is a need to send the result statement
         if self.activity_note==None and comment=="No commentaries":
             print("ok ca passe")
             statement = Statement(
@@ -946,6 +1006,7 @@ class Autostatement():
                 object=object,
 
             )
+        #case when only coms are entered, no score needed in result
         elif self.activity_note==None:
             dico["http://www.tincan.com/extensions/commentaries"] = str(self.comlist)
             result = Result(
@@ -958,6 +1019,8 @@ class Autostatement():
                 object=object,
                 result=result,
             )
+
+        # case when only notes are entered, no extensions needed
         elif comment=="No commentaries":
             result = Result(
                 score=Score(
@@ -992,9 +1055,6 @@ class Autostatement():
             result=result,
             )
 
-        print (lrs_properties.username)
-        print (lrs_properties.password)
-        print (lrs_properties.endpoint)
 
 
         response = self.lrs.save_statement(statement)
@@ -1020,26 +1080,28 @@ class Autostatement():
         sm.transition.direction="right"
         self.popup3.dismiss()
 
-class MonAppli(App):
+class CarnetdeBord(App):
 
 
     def build(self):
+
         return sm
+    #function called when a qr code is scanned
     def qr_det(self):
         qrwidget.ids.detector.stop()
         sm.get_screen("qrscr").create_popup2()
 
-
+    #function when the returnmenu button is pressed in th qr screen
     def menureturn(self):
         qrwidget.ids.detector.stop()
         sm.current="menu"
         sm.transition.direction="right"
 
-
+    #called to make an urlrequest
     def qr_detected(self, url):
         myparams.build_from_url2(url)
 
 
 
 if __name__ == "__main__":
-    MonAppli().run()
+    CarnetdeBord().run()
