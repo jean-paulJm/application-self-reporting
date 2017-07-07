@@ -1,7 +1,7 @@
 [app]
 
 # (str) Title of your application
-title = MyReports
+title = Carnet de Bord
 
 # (str) Package name
 package.name = myreports
@@ -46,9 +46,10 @@ requirements = kivy, hostpython2, tincan, aniso8601, pytz, dateutil, python2, an
 
 # (str) Presplash of the application
 #presplash.filename = %(source.dir)s/data/presplash.png
-
+presplash.filename = %(source.dir)s/cdb.png
 # (str) Icon of the application
-#icon.filename = %(source.dir)s/data/icon.png
+#%(source.dir)s/data/icon.png
+icon.filename = %(source.dir)s/cdb.png
 
 # (str) Supported orientation (one of landscape, portrait or all)
 orientation = landscape
