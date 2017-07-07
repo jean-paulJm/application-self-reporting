@@ -760,25 +760,27 @@ class Coms(Screen):
         self.ids.myspinner2.values=[v.encode("utf-8") for v in myparams.commentaries]
 
 
+    def inputcom(self):
+        blhoriz2 = BoxLayout(orientation="horizontal")
 
-
-
-    def deletecom(self, textinput,erase):
-
-        textinput.text = " "
-        self.ids.comlib.remove_widget(textinput)
-        self.ids.comlib.remove_widget(erase)
-        self.ids.comlib.add_widget(self.ids.champlibre)
-
+        if self.ids.labcom in self.ids.changebox.children:
+            self.ids.changebox.remove_widget(self.ids.labcom)
+        self.Selectcom = Label(text=self.textinput.text.encode("utf-8"), font_size='18sp')
+        Erasecom = ToggleButton(text='Supprimer ce commentaire', font_size='20sp')
+        Erasecom.bind(on_press=lambda x: self.deletebox(blhoriz2))
+        blhoriz2.add_widget(self.Selectcom)
+        blhoriz2.add_widget(Erasecom)
+        self.ids.changebox.add_widget(blhoriz2)
+        self.textinput.text=" "
     def createinput(self):
 
 
         self.ids.comlib.remove_widget(self.ids.champlibre)
         self.ids.comlib.add_widget(self.textinput)
-        erase = ToggleButton(text='Supprimer ce champ libre', font_size='20sp')
+        addcominput = ToggleButton(text='Ajouter un autre commentaire libre', font_size='20sp')
 
-        erase.bind(on_press=lambda x: self.deletecom(self.textinput,erase))
-        self.ids.comlib.add_widget(erase)
+        addcominput.bind(on_press=lambda x: self.inputcom())
+        self.ids.comlib.add_widget(addcominput)
 
 
     def valideco(self):
@@ -796,10 +798,16 @@ class Coms(Screen):
             pass
         else:
             self.listecom.append(self.ids.myspinner2.text)
+
+        if self.textinput.text!=" ":
+            self.listecom.append(self.textinput.text.encode("utf-8"))
+
         self.bvalid = BoxLayout(orientation="vertical")
         self.returnact = ToggleButton(text='Retour', font_size='20sp')
         self.pops = Popup(title='Bravo, vos données ont bien été envoyées', content=self.bvalid, auto_dismiss=False)
         self.returnact.bind(on_release=self.validate)
+        if self.listecom[0]==["Sélection de commentaires"]:
+            del self.listecom[0]
         if self.listecom==["Sélection de commentaires"]:
             del self.listecom[0]
             self.box = BoxLayout(orientation='vertical')
@@ -818,11 +826,9 @@ class Coms(Screen):
         else:
             state.send_statement()
             self.a=[2]
-            #self.bvalid= BoxLayout(orientation="vertical")
-            #returnact=ToggleButton(text='Retour', font_size='20sp')
+
             self.bvalid.add_widget(self.returnact)
-            #self.pops = Popup(title='Bravo, vos données ont bien été envoyées', content=self.bvalid, auto_dismiss=False)
-            #returnact.bind(on_release=self.validate)
+
             self.pops.open()
 
             sm.get_screen("activity").ids.labid.text = "Bonjour"+" "+\
@@ -892,7 +898,7 @@ class Autostatement():
             self.ratescale=None
             self.min=None
 
-        self.freecoms=sm.get_screen("com").textinput.text
+
         lrs_properties.endpoint=myparams.lrsdict.values()[0]["endpoint"]
 
         lrs_properties.password=myparams.lrsdict.values()[0]["password"]
@@ -927,12 +933,12 @@ class Autostatement():
         )
         dico={}
         comment=""
-        self.comlist = sm.get_screen("com").listecom + [self.freecoms]
+        self.comlist = sm.get_screen("com").listecom
         for com in self.comlist:
             comment+=com
 
 
-        if self.activity_note==None and comment=="No commentaries ":
+        if self.activity_note==None and comment=="No commentaries":
             print("ok ca passe")
             statement = Statement(
                 actor=actor,
@@ -952,7 +958,7 @@ class Autostatement():
                 object=object,
                 result=result,
             )
-        elif comment=="No commentaries ":
+        elif comment=="No commentaries":
             result = Result(
                 score=Score(
                     raw=self.activity_note,
