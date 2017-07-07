@@ -31,6 +31,7 @@ class Extparams():
         self.accounts = {}
         self.activities = {}
         self.commentaries=[]
+        self.lrsdict={}
         try:
              results = pickle.load(open("mydata.data", "rb"))
              self.datas(req=None, result=results)
@@ -72,13 +73,20 @@ class Extparams():
         activity_dict=result["ACTIVITIES"]
         for act in activity_dict:
             key2=act["name"]
-            ech=RatingScale(act["ratingscale"]["type"], act["ratingscale"]["scale"])
+            ech={"rate":RatingScale(act["ratingscale"]["type"], act["ratingscale"]["scale"]),"description" : act["description"]}
+            #act["description"]
             self.activities[key2]=ech
         print (self.activities)
         commentary_list=result["COMMENTARIES"]
         for com in commentary_list:
             self.commentaries.append(com)
         print (self.commentaries)
+        lrs_dict=result["LRS"]
+        for lrs in lrs_dict:
+            key3=lrs["username"]
+            val3={"password" : lrs["password"], "version":lrs["version"],"endpoint":lrs["endpoint"]}
+            self.lrsdict[key3]=val3
+        print (self.lrsdict)
         #App._running_app.check()
 
         #for values in result:

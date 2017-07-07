@@ -225,7 +225,7 @@ class ZbarQrcodeDetector(AnchorLayout):
     '''Widget that use the AndroidCamera and zbar to detect qrcode.
     When found, the `symbols` will be updated
     '''
-    camera_size = ListProperty([320,240])
+    camera_size = ListProperty([1280,960])
 
     symbols = ListProperty([])
     symbolselected=BooleanProperty(False)
@@ -239,7 +239,8 @@ class ZbarQrcodeDetector(AnchorLayout):
         super(ZbarQrcodeDetector, self).__init__(**kwargs)
         self._camera = AndroidCamera(
                 size=self.camera_size,
-                size_hint=(None, None))
+                size_hint=(None,None))
+
         self._camera.bind(on_preview_frame=self._detect_qrcode_frame)
         self.add_widget(self._camera)
 
